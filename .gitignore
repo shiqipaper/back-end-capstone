@@ -1,5 +1,14 @@
+
+### Flask ###
+instance/*
+!instance/.gitignore
+.webassets-cache
+.env
+
+### Flask.Python Stack ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
+__pycache__/*
 *.py[cod]
 *$py.class
 
@@ -169,3 +178,6 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+.idea
+.idea/*
