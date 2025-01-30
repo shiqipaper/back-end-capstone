@@ -11,7 +11,7 @@ class User(db.Model):
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
     password_hash: Mapped[str]
 
-    liked_plants = db.relationship('Plant', secondary=user_plant_likes, back_populates='users')
+    liked_plants = db.relationship('Plant', secondary=user_plant_likes, back_populates='liked_by')
     saved_plants = db.relationship('Plant', secondary=user_plant_mylist, back_populates='saved_by_users')
     comments: Mapped[List["Comment"]] = relationship(back_populates="user")
 

@@ -1,5 +1,5 @@
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import Blueprint, request, jsonify, g
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from flask_cors import cross_origin
 from app.extensions import db
 from app.models.comment import Comment
@@ -8,6 +8,7 @@ from app.models.user import User
 from .route_utilities import validate_model, create_model
 
 plants_bp = Blueprint("plants_bp", __name__, url_prefix="/plants")
+
 
 @plants_bp.get("")
 @cross_origin()
@@ -33,7 +34,7 @@ def get_homepage_plants():
 @cross_origin()
 def get_plant_details(plant_id):
     plant = validate_model(Plant, plant_id)
-    return jsonify(plant.to_detail_dict()), 200
+    return jsonify(plant.to_detail_dict(current_user=get_current_user())), 200
 
 @plants_bp.post("/<plant_id>/comments")
 @jwt_required()
@@ -65,44 +66,59 @@ def get_comments(plant_id):
     plant = validate_model(Plant, plant_id)
     return jsonify([comment.to_dict() for comment in plant.comments]), 200
 
+
 @plants_bp.post("/<plant_id>/like")
 @jwt_required()
 @cross_origin()
 def like_plant(plant_id):
-    current_user_id = int(get_jwt_identity())
-    user = db.session.get(User, current_user_id)
-    plant = db.session.get(Plant, plant_id)
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({'error': 'User not found'}), 400
 
-    if not plant:
-        return jsonify({'error': 'Plant not found'}), 404
+    plant = validate_model(Plant, plant_id)
 
-    if plant in user.liked_plants:
-        user.liked_plants.remove(plant)
-        message = "Plant unliked successfully"
+    if plant in current_user.liked_plants:
+        current_user.liked_plants.remove(plant)
+        liked = False
     else:
-        user.liked_plants.append(plant)
-        message = "Plant liked successfully"
+        current_user.liked_plants.append(plant)
+        liked = True
 
     db.session.commit()
-    return jsonify({'message': message, 'likes_count': len(plant.users)}), 200
+    return jsonify({
+        "liked": liked,
+        "likes_count": plant.liked_by.count()
+    }), 200
+
 
 @plants_bp.post("/<plant_id>/save")
 @jwt_required()
 @cross_origin()
 def save_plant(plant_id):
-    current_user_id = int(get_jwt_identity())
-    user = db.session.get(User, current_user_id)
-    plant = db.session.get(Plant, plant_id)
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({'error': 'User not found'}), 400
+    plant = validate_model(Plant, plant_id)
 
-    if not plant:
-        return jsonify({'error': 'Plant not found'}), 404
-
-    if plant in user.saved_plants:
-        user.saved_plants.remove(plant)
-        message = "Plant removed from My List"
+    if plant in current_user.saved_plants:
+        current_user.saved_plants.remove(plant)
+        saved = False
     else:
-        user.saved_plants.append(plant)
-        message = "Plant saved to My List"
+        current_user.saved_plants.append(plant)
+        saved = True
 
     db.session.commit()
-    return jsonify({'message': message, 'saved_count': len(plant.saved_by_users)}), 200
+    return jsonify({
+        "saved": saved,
+        "saves_count": plant.saved_by_users.count()
+    }), 200
+
+def get_current_user():
+    verify_jwt_in_request(optional=True)
+    current_user_id = get_jwt_identity()
+    if not current_user_id:
+        return None
+    current_user = User.query.get(int(current_user_id))
+    if not current_user:
+        return None
+    return current_user

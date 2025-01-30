@@ -15,17 +15,18 @@ class Plant(db.Model):
     description: Mapped[str]
     main_image_url: Mapped[Optional[str]]
 
-    users = db.relationship('User', secondary=user_plant_likes, back_populates='liked_plants')
-    saved_by_users = db.relationship('User', secondary=user_plant_mylist, back_populates='saved_plants')
+    liked_by = db.relationship('User', secondary='user_plant_likes', back_populates='liked_plants', lazy='dynamic')
+    saved_by_users = db.relationship('User', secondary=user_plant_mylist, back_populates='saved_plants', lazy='dynamic')
     images: Mapped[List["PlantImage"]] = relationship(back_populates="plant", cascade="all, delete-orphan")
     comments: Mapped[List["Comment"]] = relationship(back_populates="plant", cascade="all, delete-orphan")
 
-    def to_list_dict(self):
+    def to_list_dict(self, current_user=None):
         return {
             'id': self.id,
             'name': self.name,
             'main_image_url': generate_s3_url(self.main_image_url) if self.main_image_url else None,
-            'likes_count': len(self.users)
+            'likes_count': self.liked_by.count(),
+            'is_liked': current_user in self.liked_by if current_user else False,
         }
 
     def to_detail_dict(self):
@@ -36,9 +37,11 @@ class Plant(db.Model):
             'id': self.id,
             'name': self.name,
             'description': self.description,
-            'likes_count': len(self.users),
-            'saved_count': len(self.saved_by_users),
-            'images': all_images,
+            'likes_count': self.liked_by.count(),
+            'saves_count': self.saved_by_users.count(),
+            'is_liked': current_user in self.liked_by if current_user else False,
+            'is_saved': current_user in self.saved_by_users if current_user else False,
+            'images': [img for img in all_images if img is not None],
             'comments': [comment.to_dict() for comment in self.comments]
         }
 

@@ -1,6 +1,6 @@
 from flask import abort, make_response
 from app.extensions import db
-
+from flask_jwt_extended import get_jwt_identity
 
 def validate_model(cls, model_id):
     try:
@@ -29,3 +29,9 @@ def create_model(cls, model_data):
     db.session.commit()
 
     return new_model.to_dict()
+
+def get_current_user():
+    current_user_id = get_jwt_identity()
+    if current_user_id:
+        return User.query.get(int(current_user_id))
+    return None
