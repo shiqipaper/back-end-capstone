@@ -12,7 +12,12 @@ class User(db.Model):
     password_hash: Mapped[str]
 
     liked_plants = db.relationship('Plant', secondary=user_plant_likes, back_populates='liked_by')
-    saved_plants = db.relationship('Plant', secondary=user_plant_mylist, back_populates='saved_by_users')
+    saved_plants = db.relationship(
+        'Plant',
+        secondary=user_plant_mylist,
+        back_populates='saved_by_users',
+        lazy='dynamic'
+    )
     comments: Mapped[List["Comment"]] = relationship(back_populates="user")
 
     def set_password(self, password: str):

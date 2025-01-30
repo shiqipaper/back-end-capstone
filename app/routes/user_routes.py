@@ -71,3 +71,39 @@ def update_user_profile():
         return jsonify({'message': 'Profile updated successfully'}), 200
     except ValueError:
         return jsonify({'message': 'Invalid user ID'}), 400
+
+
+@users_bp.route('/saved-plants', methods=['GET'])
+@jwt_required()
+def get_saved_plants():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 6, type=int)
+
+        user_id = get_jwt_identity()
+        user = User.query.get_or_404(user_id)
+
+        # Use the dynamic query
+        paginated_plants = user.saved_plants.paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+
+        plants_data = [{
+            'id': plant.id,
+            'name': plant.name,
+            'main_image_url': f'/static/{plant.main_image_url}' if plant.main_image_url else None,
+            'likes_count': plant.liked_by.count(),  # Now using count() instead of len()
+            'saves_count': plant.saved_by_users.count()
+        } for plant in paginated_plants.items]
+
+        return jsonify({
+            'plants': plants_data,
+            'total_pages': paginated_plants.pages,
+            'current_page': paginated_plants.page,
+            'total_items': paginated_plants.total
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
