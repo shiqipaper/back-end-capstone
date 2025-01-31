@@ -180,4 +180,15 @@ cython_debug/
 .pypirc
 
 .idea
+<<<<<<< HEAD
 .idea/*
+=======
+.idea/*
+
+*.pyc
+
+.DS_Store
+*/.DS_Store
+*/.DS_Store?
+*/._*
+>>>>>>> ffcc766 (Read image from S3)
