@@ -29,7 +29,7 @@ class Plant(db.Model):
             'is_liked': current_user in self.liked_by if current_user else False,
         }
 
-    def to_detail_dict(self):
+    def to_detail_dict(self, current_user=None):
         main_image = {'id': 0, 'image_url': generate_s3_url(self.main_image_url)} if self.main_image_url else None
         all_images = [main_image] + [image.to_dict() for image in self.images] if main_image else self.images
         all_images.sort(key=lambda img: img['id'])
