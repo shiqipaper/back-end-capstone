@@ -34,5 +34,5 @@ s3transfer==0.11.2
 six==1.17.0
 SQLAlchemy==2.0.37
 typing_extensions==4.12.2
-urllib3>=1.25,<2.0
+urllib3>=2.2.2
 Werkzeug==3.1.3

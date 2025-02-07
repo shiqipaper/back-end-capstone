@@ -4,6 +4,7 @@ from flask_cors import cross_origin
 from app.extensions import db, bcrypt
 from app.models.user import User
 from .route_utilities import validate_model
+from ..s3_helper import generate_s3_url
 
 users_bp = Blueprint("users_bp", __name__, url_prefix="/users")
 
@@ -93,7 +94,7 @@ def get_saved_plants():
         plants_data = [{
             'id': plant.id,
             'name': plant.name,
-            'main_image_url': f'/static/{plant.main_image_url}' if plant.main_image_url else None,
+            'main_image_url': generate_s3_url(plant.main_image_url) if plant.main_image_url else None,
             'likes_count': plant.liked_by.count(),  # Now using count() instead of len()
             'saves_count': plant.saved_by_users.count()
         } for plant in paginated_plants.items]

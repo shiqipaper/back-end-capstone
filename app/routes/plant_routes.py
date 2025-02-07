@@ -1,3 +1,5 @@
+import os
+
 from flask import Blueprint, request, jsonify, g
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from flask_cors import cross_origin
@@ -6,6 +8,9 @@ from app.models.comment import Comment
 from app.models.plant import Plant
 from app.models.user import User
 from .route_utilities import validate_model, create_model
+from ..s3_helper import upload_file_to_s3
+
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 plants_bp = Blueprint("plants_bp", __name__, url_prefix="/plants")
 
@@ -40,31 +45,57 @@ def get_plant_details(plant_id):
 @jwt_required()
 @cross_origin()
 def add_comment(plant_id):
-    validate_model(Plant, plant_id)
-
-    data = request.get_json()
-    content = data.get('content')
-
-    try:
-        user_id = int(get_jwt_identity())
-    except ValueError:
-        return jsonify({'error': 'Invalid user ID'}), 400
+    plant = validate_model(Plant, plant_id)
+    content = request.form.get('content')
+    image_file = request.files.get('image')
 
     if not content:
         return jsonify({"error": "Content is required"}), 400
 
+    image_key = None
+    if image_file:
+        if not image_file.content_type.startswith('image/'):
+            return jsonify({"error": "Invalid file type. Only images allowed"}), 400
+
+        if request.content_length > MAX_FILE_SIZE + 1024:
+            return jsonify({"error": "File size exceeds 5MB limit"}), 413
+        image_key = upload_file_to_s3(image_file)
+        if not image_key:
+            return jsonify({"error": "Failed to upload image"}), 500
+
+    user_id = get_jwt_identity()
+
     comment_data = {
         "content": content,
         "user_id": user_id,
-        "plant_id": plant_id
+        "plant_id": plant.id,
+        "image_key": image_key  # Store just the key
     }
+
     return jsonify(create_model(Comment, comment_data)), 201
+
 
 @plants_bp.get("/<plant_id>/comments")
 @cross_origin()
 def get_comments(plant_id):
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 5, type=int)
+
     plant = validate_model(Plant, plant_id)
-    return jsonify([comment.to_dict() for comment in plant.comments]), 200
+    comments_query = Comment.query.filter_by(plant_id=plant_id).order_by(Comment.created_at.desc())
+
+    pagination = comments_query.paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+
+    return jsonify({
+        'comments': [comment.to_dict() for comment in pagination.items],
+        'total_pages': pagination.pages,
+        'current_page': pagination.page,
+        'total_comments': pagination.total
+    }), 200
 
 
 @plants_bp.post("/<plant_id>/like")

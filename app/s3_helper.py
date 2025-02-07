@@ -16,18 +16,17 @@ def get_s3_client():
     )
 
 
-def upload_file_to_s3(file, bucket_name=None, acl="public-read"):
+def upload_file_to_s3(file, bucket_name=None):
     s3 = get_s3_client()
     bucket_name = bucket_name or os.getenv('S3_BUCKET_NAME')
 
     try:
-        filename = f"{uuid4().hex}_{file.filename}"
+        filename = f"comments/{uuid4().hex}"
         s3.upload_fileobj(
             file,
             bucket_name,
             filename,
             ExtraArgs={
-                "ACL": acl,
                 "ContentType": file.content_type
             }
         )
