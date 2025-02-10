@@ -1,5 +1,3 @@
-import os
-
 from flask import Blueprint, request, jsonify, g
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from flask_cors import cross_origin
@@ -13,7 +11,6 @@ from ..s3_helper import upload_file_to_s3
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 plants_bp = Blueprint("plants_bp", __name__, url_prefix="/plants")
-
 
 @plants_bp.get("")
 @cross_origin()

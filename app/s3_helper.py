@@ -1,10 +1,8 @@
 from functools import lru_cache
-
 import boto3
 import os
 from botocore.exceptions import ClientError
 from uuid import uuid4
-
 
 @lru_cache(maxsize=None)
 def get_s3_client():
@@ -14,7 +12,6 @@ def get_s3_client():
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
         region_name=os.getenv('AWS_REGION')
     )
-
 
 def upload_file_to_s3(file, bucket_name=None):
     s3 = get_s3_client()
@@ -34,7 +31,6 @@ def upload_file_to_s3(file, bucket_name=None):
     except ClientError as e:
         print(f"Error uploading to S3: {e}")
         return None
-
 
 def generate_s3_url(filename, bucket_name=None, expiration=3600):
     s3 = get_s3_client()

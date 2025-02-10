@@ -2,9 +2,7 @@ from app.extensions import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey
 from datetime import datetime
-
 from app.s3_helper import generate_s3_url
-
 
 class Comment(db.Model):
     __tablename__ = 'comments'

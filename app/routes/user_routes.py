@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from flask_cors import cross_origin
-from app.extensions import db, bcrypt
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+
+from app.extensions import db
 from app.models.user import User
 from .route_utilities import validate_model
 from ..s3_helper import generate_s3_url

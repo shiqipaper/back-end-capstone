@@ -4,7 +4,7 @@ from app.extensions import db, migrate, bcrypt, jwt
 from app.routes.plant_routes import plants_bp
 from app.routes.user_routes import users_bp
 from config import Config
-import os
+
 
 def create_app(config=None):
     app = Flask(__name__)

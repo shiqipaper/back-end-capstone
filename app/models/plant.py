@@ -3,9 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey
 from .relationships import user_plant_likes, user_plant_mylist
 from typing import List, Optional
-
 from ..s3_helper import generate_s3_url
-
 
 class Plant(db.Model):
     __tablename__ = 'plants'
